@@ -2,6 +2,9 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Home from '../pages/Home/Home';
 import LoginRegister from '../pages/Auth/LoginRegister';
+import TouristSpotDetails from '../pages/PontosTuristicos/TouristSpotDetails';
+import PointForm from '../pages/Admin/PointForm';
+import IntegrationPanel from '../pages/Admin/IntegrationPanel';
 
 const AppRoutes = () => {
     // Basic protection logic placeholder
@@ -17,8 +20,11 @@ const AppRoutes = () => {
         <BrowserRouter>
             <Routes>
                 <Route path="/login" element={<LoginRegister />} />
-                {/* Public for now as requirement says "Redirecionar para a Home após sucesso", usually implies Home is protected or destination */}
-                <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+                <Route path="/" element={<Home />} />
+                <Route path="/detalhes/:id" element={<TouristSpotDetails />} />
+                <Route path="/pontos/novo" element={<PrivateRoute><PointForm /></PrivateRoute>} />
+                <Route path="/pontos/editar/:id" element={<PrivateRoute><PointForm /></PrivateRoute>} />
+                <Route path="/admin/integracao" element={<PrivateRoute><IntegrationPanel /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </BrowserRouter>

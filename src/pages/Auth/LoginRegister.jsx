@@ -48,6 +48,7 @@ const LoginRegister = () => {
         }
         // Mock Auth
         localStorage.setItem('token', 'mock-token-login');
+        localStorage.setItem('userEmail', loginData.email);
         toast.success("Login realizado com sucesso!");
         nav('/');
     };
@@ -68,6 +69,7 @@ const LoginRegister = () => {
 
         // Mock Auth
         localStorage.setItem('token', 'mock-token-register');
+        localStorage.setItem('userEmail', registerData.email);
         toast.success("Cadastro realizado com sucesso!");
         nav('/');
     };

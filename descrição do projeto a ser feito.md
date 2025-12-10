@@ -46,9 +46,9 @@ O usuário navega publicamente para ver os cards dos pontos turísticos. Ao tent
     * **Botão "Upload de Foto":** Input file para enviar foto (MultipartFile).
 * **Comportamento:** Se o usuário não logado tentar comentar/avaliar, redirecionar para Login.
 
-#### 4. Tela de Cadastro/Edição de Ponto (Admin/User)
+#### 4. Tela de Cadastro/Edição de Ponto (Admin)
 * **Descrição:** Formulário para criar ou editar um ponto turístico.
-* **Nível de Acesso:** Logado (Admin/User).
+* **Nível de Acesso:** Logado (Admin).
 * **Componentes:**
     * Inputs de Texto: Nome, Descrição, Endereço.
     * Select: Cidade/Estado (Brasil).
