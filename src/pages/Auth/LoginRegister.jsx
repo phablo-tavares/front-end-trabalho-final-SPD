@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Visibility, VisibilityOff, Email, Person, Lock } from '@mui/icons-material';
+import { authService } from '../../services';
 
 const LoginRegister = () => {
     const [tabValue, setTabValue] = useState(0);
@@ -26,6 +27,7 @@ const LoginRegister = () => {
     // Form states
     const [loginData, setLoginData] = useState({ email: '', password: '' });
     const [registerData, setRegisterData] = useState({ name: '', email: '', password: '' });
+    const [loading, setLoading] = useState(false);
 
     const handleTabChange = (event, newValue) => {
         setTabValue(newValue);
@@ -39,21 +41,28 @@ const LoginRegister = () => {
         setRegisterData({ ...registerData, [e.target.name]: e.target.value });
     };
 
-    const handleLoginSubmit = (e) => {
+    const handleLoginSubmit = async (e) => {
         e.preventDefault();
         // Basic validation
         if (!loginData.email || !loginData.password) {
             toast.error("Preencha todos os campos!");
             return;
         }
-        // Mock Auth
-        localStorage.setItem('token', 'mock-token-login');
-        localStorage.setItem('userEmail', loginData.email);
-        toast.success("Login realizado com sucesso!");
-        nav('/');
+
+        setLoading(true);
+        try {
+            await authService.login(loginData.email, loginData.password);
+            toast.success("Login realizado com sucesso!");
+            nav('/');
+        } catch (error) {
+            console.error(error);
+            toast.error(error.message || "Erro ao fazer login.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleRegisterSubmit = (e) => {
+    const handleRegisterSubmit = async (e) => {
         e.preventDefault();
         // Basic validation
         if (!registerData.name || !registerData.email || !registerData.password) {
@@ -67,11 +76,17 @@ const LoginRegister = () => {
             return;
         }
 
-        // Mock Auth
-        localStorage.setItem('token', 'mock-token-register');
-        localStorage.setItem('userEmail', registerData.email);
-        toast.success("Cadastro realizado com sucesso!");
-        nav('/');
+        setLoading(true);
+        try {
+            await authService.register(registerData);
+            toast.success("Cadastro realizado com sucesso!");
+            nav('/');
+        } catch (error) {
+            console.error(error);
+            toast.error("Erro ao registrar usuário.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -167,9 +182,10 @@ const LoginRegister = () => {
                                     variant="contained"
                                     size="large"
                                     type="submit"
+                                    disabled={loading}
                                     sx={{ mt: 3, mb: 2, borderRadius: 2, textTransform: 'none', fontSize: '1.1rem' }}
                                 >
-                                    Entrar
+                                    {loading ? 'Entrando...' : 'Entrar'}
                                 </Button>
                             </form>
                         </Fade>
@@ -249,9 +265,10 @@ const LoginRegister = () => {
                                     variant="contained"
                                     size="large"
                                     type="submit"
+                                    disabled={loading}
                                     sx={{ mt: 3, mb: 2, borderRadius: 2, textTransform: 'none', fontSize: '1.1rem' }}
                                 >
-                                    Registrar
+                                    {loading ? 'Registrando...' : 'Registrar'}
                                 </Button>
                             </form>
                         </Fade>

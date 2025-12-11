@@ -9,7 +9,8 @@ import {
     Alert,
     Snackbar,
     Divider,
-    Stack
+    Stack,
+    CircularProgress
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
@@ -17,9 +18,11 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DescriptionIcon from '@mui/icons-material/Description';
 import TableViewIcon from '@mui/icons-material/TableView';
 import CodeIcon from '@mui/icons-material/Code';
+import { integrationService } from '../../services';
 
 const IntegrationPanel = () => {
     const [file, setFile] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
 
     const handleCloseNotification = () => {
@@ -33,66 +36,28 @@ const IntegrationPanel = () => {
         }
     };
 
-    const handleExport = (format) => {
-        // Mock export functionality
-        const mockData = {
-            points: [
-                { id: 1, name: 'Cristo Redentor', city: 'Rio de Janeiro' },
-                { id: 2, name: 'Pelourinho', city: 'Salvador' }
-            ]
-        };
-
-        let content = '';
-        let mimeType = '';
-        let extension = '';
-
-        switch (format) {
-            case 'JSON':
-                content = JSON.stringify(mockData, null, 2);
-                mimeType = 'application/json';
-                extension = 'json';
-                break;
-            case 'CSV':
-                content = 'id,name,city\n1,Cristo Redentor,Rio de Janeiro\n2,Pelourinho,Salvador';
-                mimeType = 'text/csv;charset=utf-8;';
-                extension = 'csv';
-                break;
-            case 'XML':
-                content = '<points><point><id>1</id><name>Cristo Redentor</name><city>Rio de Janeiro</city></point></points>';
-                mimeType = 'application/xml';
-                extension = 'xml';
-                break;
-            default:
-                return;
+    const handleExport = async (format) => {
+        setLoading(true);
+        try {
+            await integrationService.exportData(format.toLowerCase());
+            setNotification({
+                open: true,
+                message: `Exportação para ${format} realizada com sucesso!`,
+                severity: 'success'
+            });
+        } catch (error) {
+            console.error(error);
+            setNotification({
+                open: true,
+                message: 'Erro ao exportar dados.',
+                severity: 'error'
+            });
+        } finally {
+            setLoading(false);
         }
-
-        // Create download link
-        const fileName = `pontos_turisticos_export.${extension}`;
-        const blob = new Blob([content], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-
-        link.href = url;
-        link.setAttribute('download', fileName);
-        link.style.display = 'none';
-        document.body.appendChild(link);
-
-        link.click();
-
-        // Cleanup after a small delay to ensure the download triggers
-        setTimeout(() => {
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
-        }, 100);
-
-        setNotification({
-            open: true,
-            message: `Exportação para ${format} realizada com sucesso!`,
-            severity: 'success'
-        });
     };
 
-    const handleImport = () => {
+    const handleImport = async () => {
         if (!file) {
             setNotification({
                 open: true,
@@ -102,15 +67,25 @@ const IntegrationPanel = () => {
             return;
         }
 
-        // Mock import processing
-        setTimeout(() => {
+        setLoading(true);
+        try {
+            const result = await integrationService.importData(file);
             setNotification({
                 open: true,
-                message: `Arquivo "${file.name}" importado com sucesso! 2 registros processados.`,
+                message: `Arquivo "${file.name}" importado com sucesso! ${result.count} registros processados.`,
                 severity: 'success'
             });
             setFile(null); // Reset file input
-        }, 1000);
+        } catch (error) {
+            console.error(error);
+            setNotification({
+                open: true,
+                message: 'Erro ao importar dados. Verifique o formato do arquivo.',
+                severity: 'error'
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -142,6 +117,7 @@ const IntegrationPanel = () => {
                                 startIcon={<CodeIcon />}
                                 onClick={() => handleExport('JSON')}
                                 fullWidth
+                                disabled={loading}
                                 sx={{ justifyContent: 'flex-start', py: 1.5 }}
                             >
                                 Exportar em JSON
@@ -152,6 +128,7 @@ const IntegrationPanel = () => {
                                 startIcon={<TableViewIcon />}
                                 onClick={() => handleExport('CSV')}
                                 fullWidth
+                                disabled={loading}
                                 sx={{ justifyContent: 'flex-start', py: 1.5 }}
                             >
                                 Exportar em CSV
@@ -162,6 +139,7 @@ const IntegrationPanel = () => {
                                 startIcon={<DescriptionIcon />}
                                 onClick={() => handleExport('XML')}
                                 fullWidth
+                                disabled={loading}
                                 sx={{ justifyContent: 'flex-start', py: 1.5 }}
                             >
                                 Exportar em XML
@@ -209,21 +187,21 @@ const IntegrationPanel = () => {
                                 {file ? file.name : "Clique para selecionar ou arraste o arquivo aqui"}
                             </Typography>
                             <Typography variant="caption" display="block" color="text.disabled" sx={{ mt: 1 }}>
-                                Suporta: JSON, CSV, XML
+                                Suporta: JSON
                             </Typography>
                         </Box>
 
                         <Button
                             variant="contained"
                             size="large"
-                            startIcon={<FileUploadIcon />}
+                            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <FileUploadIcon />}
                             onClick={handleImport}
-                            disabled={!file}
+                            disabled={!file || loading}
                             color="success"
                             fullWidth
                             sx={{ mt: 'auto', py: 1.5 }}
                         >
-                            Enviar Arquivo
+                            {loading ? 'Processando...' : 'Enviar Arquivo'}
                         </Button>
                     </Paper>
                 </Grid>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { authService } from '../services';
 import Home from '../pages/Home/Home';
 import LoginRegister from '../pages/Auth/LoginRegister';
 import TouristSpotDetails from '../pages/PontosTuristicos/TouristSpotDetails';
@@ -9,7 +10,7 @@ import IntegrationPanel from '../pages/Admin/IntegrationPanel';
 const AppRoutes = () => {
     // Basic protection logic placeholder
     const isAuthenticated = () => {
-        return !!localStorage.getItem('token');
+        return authService.isAuthenticated();
     };
 
     const PrivateRoute = ({ children }) => {

@@ -1,18 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import Navbar from '../../components/Layout/Navbar';
-import { mockPoints } from '../../components/Shared/mockData';
+import { pointsService } from '../../services';
 import HeroSection from '../../components/TouristSpotDetails/HeroSection';
 import ImageGallery from '../../components/TouristSpotDetails/ImageGallery';
 import AccommodationList from '../../components/TouristSpotDetails/AccommodationList';
 import ReviewsSection from '../../components/TouristSpotDetails/ReviewsSection';
 import ActionButtons from '../../components/TouristSpotDetails/ActionButtons';
-import { Container, Grid, Typography, Button, Box, Link, Breadcrumbs } from '@mui/material';
+import { Container, Grid, Typography, Button, Box, Link, Breadcrumbs, CircularProgress } from '@mui/material';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 
 const TouristSpotDetails = () => {
     const { id } = useParams();
-    const spot = mockPoints.find(p => p.id === parseInt(id));
+    const [spot, setSpot] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSpot = async () => {
+            setLoading(true);
+            try {
+                const data = await pointsService.getById(id);
+                setSpot(data);
+            } catch (error) {
+                console.error('Error fetching details:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSpot();
+    }, [id]);
+
+    if (loading) {
+        return (
+            <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
 
     if (!spot) {
         return (
@@ -57,7 +81,7 @@ const TouristSpotDetails = () => {
 
                 <Grid container spacing={4}>
                     {/* Main Content Column */}
-                    <Grid size={{ xs: 12, lg: 8 }}>
+                    <Grid item xs={12} lg={8}>
                         <ImageGallery images={spot.images} />
 
                         <HeroSection
@@ -73,7 +97,7 @@ const TouristSpotDetails = () => {
                     </Grid>
 
                     {/* Sidebar Column */}
-                    <Grid size={{ xs: 12, lg: 4 }}>
+                    <Grid item xs={12} lg={4}>
                         <Box sx={{ position: { lg: 'sticky' }, top: 24, display: 'flex', flexDirection: 'column', gap: 3 }}>
                             <ActionButtons />
                             <AccommodationList accommodations={spot.accommodations} />

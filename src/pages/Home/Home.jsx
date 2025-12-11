@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Container, Grid, TextField, Box, FormControl, InputLabel, Select, MenuItem, Pagination, Typography, Paper, Stack } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Container, Grid, TextField, Box, FormControl, InputLabel, Select, MenuItem, Pagination, Typography, Paper, Stack, CircularProgress } from '@mui/material';
 import Navbar from '../../components/Layout/Navbar';
 import PointCard from '../../components/Shared/PointCard';
-import { mockPoints } from '../../components/Shared/mockData';
+import { pointsService } from '../../services';
 
 const Home = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -10,26 +10,63 @@ const Home = () => {
     const [ratingFilter, setRatingFilter] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('');
     const [page, setPage] = useState(1);
+
+    // Data states
+    const [points, setPoints] = useState([]);
+    const [cities, setCities] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const itemsPerPage = 6;
 
-    // Derive unique cities and categories for filters
-    const cities = [...new Set(mockPoints.map(p => p.city))];
-    const categories = [...new Set(mockPoints.map(p => p.category))];
+    // Fetch initial metadata (cities, categories)
+    useEffect(() => {
+        const loadMetadata = async () => {
+            try {
+                const [uniqueCities, uniqueCategories] = await Promise.all([
+                    pointsService.getCities(),
+                    pointsService.getCategories()
+                ]);
+                setCities(uniqueCities);
+                setCategories(uniqueCategories);
+            } catch (error) {
+                console.error('Failed to load metadata', error);
+            }
+        };
+        loadMetadata();
+    }, []);
 
-    // Filter logic
-    const filteredPoints = mockPoints.filter(point => {
-        const matchesSearch = point.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            point.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCity = cityFilter ? point.city === cityFilter : true;
-        const matchesRating = ratingFilter ? point.rating >= Number(ratingFilter) : true;
-        const matchesCategory = categoryFilter ? point.category === categoryFilter : true;
+    // Fetch points when filters change
+    useEffect(() => {
+        const fetchPoints = async () => {
+            setLoading(true);
+            try {
+                const filters = {
+                    search: searchTerm,
+                    city: cityFilter,
+                    category: categoryFilter,
+                    rating: ratingFilter
+                };
+                const data = await pointsService.getAll(filters);
+                setPoints(data);
+                setPage(1); // Reset to first page on filter change
+            } catch (error) {
+                console.error('Failed to fetch points', error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        return matchesSearch && matchesCity && matchesRating && matchesCategory;
-    });
+        const timeoutId = setTimeout(() => {
+            fetchPoints();
+        }, 300); // Debounce search
 
-    // Pagination logic
-    const count = Math.ceil(filteredPoints.length / itemsPerPage);
-    const displayedPoints = filteredPoints.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm, cityFilter, categoryFilter, ratingFilter]);
+
+    // Pagination logic (client-side for now, as service returns filtered list)
+    const count = Math.ceil(points.length / itemsPerPage);
+    const displayedPoints = points.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
     const handlePageChange = (event, value) => {
         setPage(value);
@@ -113,21 +150,27 @@ const Home = () => {
                 </Paper>
 
                 {/* Results Grid */}
-                <Grid container spacing={3}>
-                    {displayedPoints.map(point => (
-                        <Grid item key={point.id} xs={12} sm={6} md={4}>
-                            <PointCard point={point} />
-                        </Grid>
-                    ))}
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <Grid container spacing={3}>
+                        {displayedPoints.map(point => (
+                            <Grid item key={point.id} xs={12} sm={6} md={4}>
+                                <PointCard point={point} />
+                            </Grid>
+                        ))}
 
-                    {displayedPoints.length === 0 && (
-                        <Grid item xs={12}>
-                            <Typography variant="h6" align="center" color="text.secondary" sx={{ py: 8 }}>
-                                Nenhum ponto turístico encontrado com esses filtros.
-                            </Typography>
-                        </Grid>
-                    )}
-                </Grid>
+                        {displayedPoints.length === 0 && (
+                            <Grid item xs={12}>
+                                <Typography variant="h6" align="center" color="text.secondary" sx={{ py: 8 }}>
+                                    Nenhum ponto turístico encontrado com esses filtros.
+                                </Typography>
+                            </Grid>
+                        )}
+                    </Grid>
+                )}
 
                 {/* Pagination Component */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

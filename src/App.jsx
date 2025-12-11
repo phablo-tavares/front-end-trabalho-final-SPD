@@ -4,7 +4,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import AppRoutes from './routes/AppRoutes';
 
-// Basic theme configuration
 const theme = createTheme({
   palette: {
     primary: {
